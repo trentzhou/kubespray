@@ -16,8 +16,10 @@ SUPPORTED_OS = {
   "coreos-stable" => {box: "coreos-stable",      bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["stable"]},
   "coreos-alpha"  => {box: "coreos-alpha",       bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["alpha"]},
   "coreos-beta"   => {box: "coreos-beta",        bootstrap_os: "coreos", user: "core", box_url: COREOS_URL_TEMPLATE % ["beta"]},
-  "ubuntu"        => {box: "bento/ubuntu-16.04", bootstrap_os: "ubuntu", user: "vagrant"},
+  "ubuntu1604"    => {box: "generic/ubuntu1604", bootstrap_os: "ubuntu", user: "vagrant"},
+  "ubuntu1804"    => {box: "generic/ubuntu1804", bootstrap_os: "ubuntu", user: "vagrant"},
   "centos"        => {box: "centos/7",           bootstrap_os: "centos", user: "vagrant"},
+  "fedora"        => {box: "fedora/28-cloud-base", bootstrap_os: "fedora", user: "vagrant"},
   "opensuse"      => {box: "opensuse/openSUSE-42.3-x86_64", bootstrap_os: "opensuse", use: "vagrant"},
   "opensuse-tumbleweed" => {box: "opensuse/openSUSE-Tumbleweed-x86_64", bootstrap_os: "opensuse", use: "vagrant"},
 }
@@ -31,7 +33,7 @@ $vm_cpus = 1
 $shared_folders = {}
 $forwarded_ports = {}
 $subnet = "172.17.8"
-$os = "ubuntu"
+$os = "ubuntu1804"
 $network_plugin = "flannel"
 # The first three nodes are etcd servers
 $etcd_instances = $num_instances
@@ -127,6 +129,10 @@ Vagrant.configure("2") do |config|
 
      config.vm.provider :libvirt do |lv|
        lv.memory = $vm_memory
+       # Fix kernel panic on fedora 28
+       if $os == "fedora"
+        lv.cpu_mode = "host-passthrough"
+       end
      end
 
       ip = "#{$subnet}.#{i+100}"
