@@ -14,7 +14,7 @@
 
 - name: Rotate Tokens | Test if default certificate is expired
   uri:
-    url: https://{{ kube_apiserver_ip }}/api/v1/nodes
+    url: https://[{{ kube_apiserver_ip }}]/api/v1/nodes
     method: GET
     return_content: no
     validate_certs: no

@@ -81,7 +81,7 @@ spec:
 #              value: "always"
             # Disable IPv6 on Kubernetes.
             - name: FELIX_IPV6SUPPORT
-              value: "false"
+              value: "true"
             # Set Felix logging to "info"
             - name: FELIX_LOGSEVERITYSCREEN
               value: "info"
@@ -120,10 +120,12 @@ spec:
             - name: IP_AUTODETECTION_METHOD
               value: "{{ calico_ip_auto_method }}"
 {% else %}
-            - name: IP
+            - name: IP6
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
+            - name: CALICO_IPV6POOL_CIDR
+              value: "{{ kube_pods_subnet }}"
 {% endif %}
             - name: NODENAME
               valueFrom:

@@ -38,7 +38,7 @@ spec:
     - --audit-log-maxsize={{ audit_log_maxsize }}
     - --audit-policy-file={{ audit_policy_file }}
 {% endif %}
-    - --advertise-address={{ ip | default(ansible_default_ipv4.address) }}
+    - --advertise-address={{ ip | default(ansible_all_ipv6_addresses[0]) }}
     - --etcd-servers={{ etcd_access_addresses }}
 {%   if etcd_events_cluster_enabled %}
     - --etcd-servers-overrides=/events#{{ etcd_events_access_addresses }}

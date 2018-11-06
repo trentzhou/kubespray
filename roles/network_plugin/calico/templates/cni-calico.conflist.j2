@@ -16,8 +16,9 @@
       "log_level": "info",
       "ipam": {
         "type": "calico-ipam",
-        "assign_ipv4": "true",
-        "ipv4_pools": ["{{ kube_pods_subnet }}"]
+        "assign_ipv4": "false",
+        "assign_ipv6": "true",
+        "ipv6_pools": ["{{ kube_pods_subnet }}"]
       },
 {% if enable_network_policy %}
       "policy": {

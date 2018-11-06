@@ -7,7 +7,7 @@ calico_pool_name: "default-pool"
 
 # Use IP-over-IP encapsulation across hosts
 ipip: true
-ipip_mode: Always  # change to "CrossSubnet" if you only want ipip encapsulation on traffic going across subnets
+ipip_mode: Never  # change to "CrossSubnet" if you only want ipip encapsulation on traffic going across subnets
 
 # Set to true if you want your calico cni binaries to overwrite the
 # ones from hyperkube while leaving other cni plugins intact.

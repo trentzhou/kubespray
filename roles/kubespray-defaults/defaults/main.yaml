@@ -129,11 +129,11 @@ kube_network_node_prefix: 24
 # NOTE: loadbalancer_apiserver_localhost somewhat alters the final API enpdoint
 # access IP value (automatically evaluated below)
 kube_apiserver_ip: "{{ kube_service_addresses|ipaddr('net')|ipaddr(1)|ipaddr('address') }}"
-kube_apiserver_bind_address: 0.0.0.0
+kube_apiserver_bind_address: "::"
 # https
 kube_apiserver_port: 6443
 # http
-kube_apiserver_insecure_bind_address: 127.0.0.1
+kube_apiserver_insecure_bind_address: "::1"
 kube_apiserver_insecure_port: 8080
 
 # dynamic kubelet configuration
@@ -368,9 +368,9 @@ ssl_ca_dirs: >-
 # Vars for pointing to kubernetes api endpoints
 is_kube_master: "{{ inventory_hostname in groups['kube-master'] }}"
 kube_apiserver_count: "{{ groups['kube-master'] | length }}"
-kube_apiserver_address: "{{ ip | default(ansible_default_ipv4['address']) }}"
+kube_apiserver_address: "{{ ip | default(ansible_all_ipv6_addresses[0]) }}"
 kube_apiserver_access_address: "{{ access_ip | default(kube_apiserver_address) }}"
-first_kube_master: "{{ hostvars[groups['kube-master'][0]]['access_ip'] | default(hostvars[groups['kube-master'][0]]['ip'] | default(hostvars[groups['kube-master'][0]]['ansible_default_ipv4']['address'])) }}"
+first_kube_master: "{{ hostvars[groups['kube-master'][0]]['access_ip'] | default(hostvars[groups['kube-master'][0]]['ip'] | default(hostvars[groups['kube-master'][0]]['ansible_all_ipv6_addresses'][0])) }}"
 loadbalancer_apiserver_localhost: "{{ loadbalancer_apiserver is not defined }}"
 # applied if only external loadbalancer_apiserver is defined, otherwise ignored
 apiserver_loadbalancer_domain_name: "lb-apiserver.kubernetes.local"
@@ -378,12 +378,12 @@ kube_apiserver_endpoint: |-
   {% if not is_kube_master and loadbalancer_apiserver_localhost -%}
        https://localhost:{{ nginx_kube_apiserver_port|default(kube_apiserver_port) }}
   {%- elif is_kube_master -%}
-       https://{{ kube_apiserver_bind_address | regex_replace('0\.0\.0\.0','127.0.0.1') }}:{{ kube_apiserver_port }}
+       https://[{{ kube_apiserver_bind_address | regex_replace('0\.0\.0\.0','127.0.0.1') | regex_replace('^::$', '::1') }}]:{{ kube_apiserver_port }}
   {%- else -%}
   {%-   if loadbalancer_apiserver is defined and loadbalancer_apiserver.port is defined -%}
        https://{{ apiserver_loadbalancer_domain_name|default('lb-apiserver.kubernetes.local') }}:{{ loadbalancer_apiserver.port|default(kube_apiserver_port) }}
   {%-   else -%}
-       https://{{ first_kube_master }}:{{ kube_apiserver_port }}
+       https://[{{ first_kube_master }}]:{{ kube_apiserver_port }}
   {%-  endif -%}
   {%- endif %}
 kube_apiserver_insecure_endpoint: >-
@@ -406,20 +406,20 @@ etcd_events_cluster_enabled: false
 
 # Vars for pointing to etcd endpoints
 is_etcd_master: "{{ inventory_hostname in groups['etcd'] }}"
-etcd_address: "{{ ip | default(ansible_default_ipv4['address']) }}"
+etcd_address: "{{ ip | default(ansible_all_ipv6_addresses[0]) }}"
 etcd_access_address: "{{ access_ip | default(etcd_address) }}"
 etcd_events_access_address: "{{ access_ip | default(etcd_address) }}"
-etcd_peer_url: "https://{{ etcd_access_address }}:2380"
-etcd_client_url: "https://{{ etcd_access_address }}:2379"
-etcd_events_peer_url: "https://{{ etcd_events_access_address }}:2382"
-etcd_events_client_url: "https://{{ etcd_events_access_address }}:2381"
+etcd_peer_url: "https://[{{ etcd_access_address }}]:2380"
+etcd_client_url: "https://[{{ etcd_access_address }}]:2379"
+etcd_events_peer_url: "https://[{{ etcd_events_access_address }}]:2382"
+etcd_events_client_url: "https://[{{ etcd_events_access_address }}]:2381"
 etcd_access_addresses: |-
   {% for item in groups['etcd'] -%}
-    https://{{ hostvars[item]['access_ip'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }}:2379{% if not loop.last %},{% endif %}
+    https://[{{ hostvars[item]['access_ip'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_all_ipv6_addresses'][0])) }}]:2379{% if not loop.last %},{% endif %}
   {%- endfor %}
 etcd_events_access_addresses: |-
   {% for item in groups['etcd'] -%}
-    https://{{ hostvars[item]['access_ip'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }}:2381{% if not loop.last %},{% endif %}
+    https://[{{ hostvars[item]['access_ip'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_all_ipv6_addresses'][0])) }}]:2381{% if not loop.last %},{% endif %}
   {%- endfor %}
 # user should set etcd_member_name in inventory/mycluster/hosts.ini
 etcd_member_name: |-
@@ -428,11 +428,11 @@ etcd_member_name: |-
   {% endfor %}
 etcd_peer_addresses: |-
   {% for item in groups['etcd'] -%}
-    {{ hostvars[item].etcd_member_name | default("etcd" + loop.index|string) }}=https://{{ hostvars[item].access_ip | default(hostvars[item].ip | default(hostvars[item].ansible_default_ipv4['address'])) }}:2380{% if not loop.last %},{% endif %}
+    {{ hostvars[item].etcd_member_name | default("etcd" + loop.index|string) }}=https://[{{ hostvars[item].access_ip | default(hostvars[item].ip | default(hostvars[item].ansible_all_ipv6_addresses[0])) }}]:2380{% if not loop.last %},{% endif %}
   {%- endfor %}
 etcd_events_peer_addresses: |-
   {% for item in groups['etcd'] -%}
-    {{ hostvars[item].etcd_member_name | default("etcd" + loop.index|string) }}-events=https://{{ hostvars[item].access_ip | default(hostvars[item].ip | default(hostvars[item].ansible_default_ipv4['address'])) }}:2382{% if not loop.last %},{% endif %}
+    {{ hostvars[item].etcd_member_name | default("etcd" + loop.index|string) }}-events=https://[{{ hostvars[item].access_ip | default(hostvars[item].ip | default(hostvars[item].ansible_all_ipv6_addresses[0])) }}]:2382{% if not loop.last %},{% endif %}
   {%- endfor %}
 
 podsecuritypolicy_enabled: false

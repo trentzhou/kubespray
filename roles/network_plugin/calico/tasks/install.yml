@@ -88,7 +88,7 @@
 
 - name: Calico | Configure calico network pool
   shell: >
-    echo "
+    echo '
       { "kind": "IPPool",
         "apiVersion": "projectcalico.org/v3",
         "metadata": {
@@ -97,7 +97,7 @@
         "spec": {
           "cidr": "{{ kube_pods_subnet }}",
           "ipipMode": "{{ ipip_mode }}",
-          "natOutgoing": {{ nat_outgoing|default(false) and not peer_with_router|default(false) }} }} " | {{ bin_dir }}/calicoctl create -f -
+          "natOutgoing": {{ nat_outgoing|default(false) and not peer_with_router|default(false) }} }} ' | {{ bin_dir }}/calicoctl create -f - || true
   run_once: true
   delegate_to: "{{ groups['kube-master'][0] }}"
   when:
@@ -204,12 +204,12 @@
    "apiVersion": "projectcalico.org/v3",
    "kind": "BGPPeer",
    "metadata": {
-      "name": "{{ inventory_hostname }}-{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_default_ipv4"]["address"]) }}"
+      "name": "{{ inventory_hostname }}-{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_all_ipv6_addresses"][0]) }}"
    },
    "spec": {
       "asNumber": "{{ local_as | default(global_as_num)}}",
       "node": "{{ inventory_hostname }}",
-      "peerIP": "{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_default_ipv4"]["address"]) }}"
+      "peerIP": "{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_all_ipv6_addresses"][0]) }}"
    }}' | {{ bin_dir }}/calicoctl create --skip-exists -f -
   retries: 4
   delay: "{{ retry_stagger | random + 3 }}"
@@ -229,7 +229,7 @@
    "apiVersion": "v1",
    "metadata": {"node": "{{ inventory_hostname }}",
      "scope": "node",
-     "peerIP": "{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_default_ipv4"]["address"]) }}"}
+     "peerIP": "{{ hostvars[item]["calico_rr_ip"]|default(hostvars[item]["ip"])|default(hostvars[item]["ansible_all_ipv6_addresses"][0]) }}"}
    }'
    | {{ bin_dir }}/calicoctl create --skip-exists -f -
   retries: 4
