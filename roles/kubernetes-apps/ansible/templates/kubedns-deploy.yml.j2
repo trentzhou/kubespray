@@ -97,6 +97,7 @@ spec:
         - --dns-port=10053
         - --config-dir=/kube-dns-config
         - --v={{ kube_log_level }}
+        - --dns-bind-address=[::]
 {% if resolvconf_mode == 'host_resolvconf' and upstream_dns_servers is defined and upstream_dns_servers|length > 0 %}
         - --nameservers={{ upstream_dns_servers|join(',') }}
 {% endif %}
@@ -141,6 +142,7 @@ spec:
         - --server=/{{ dns_domain }}/127.0.0.1#10053
         - --server=/in-addr.arpa/127.0.0.1#10053
         - --server=/ip6.arpa/127.0.0.1#10053
+        - --no-negcache
         ports:
         - containerPort: 53
           name: dns
@@ -170,8 +172,8 @@ spec:
         args:
         - --v={{ kube_log_level }}
         - --logtostderr
-        - --probe=kubedns,127.0.0.1:10053,kubernetes.default.svc.{{ dns_domain }},5,A
-        - --probe=dnsmasq,127.0.0.1:53,kubernetes.default.svc.{{ dns_domain }},5,A
+        - --probe=kubedns,127.0.0.1:10053,kubernetes.default.svc.{{ dns_domain }},5,SRV
+        - --probe=dnsmasq,127.0.0.1:53,kubernetes.default.svc.{{ dns_domain }},5,SRV
         ports:
         - containerPort: 10054
           name: metrics
